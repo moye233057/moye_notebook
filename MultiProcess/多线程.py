@@ -3,12 +3,13 @@ import random
 import threading
 import time
 import requests
+from resources import urls
 from bs4 import BeautifulSoup
+from concurrent.futures import ThreadPoolExecutor, as_completed
+"""
+可以用：time curl http://ip:port/xxx 来测试响应时间
+"""
 
-urls = [
-    f"https://www.cnblogs.com/#p{page}"
-    for page in range(1, 50 + 1)
-]
 
 
 def craw(url):
@@ -89,6 +90,28 @@ class ProducerConsumer:
         for idx in range(2):
             t = threading.Thread(target=self.do_parse, args=(fout,), name=f"parse{idx}")
             t.start()
+
+
+class ThreadPoolObj:
+
+    def __init__(self):
+        pass
+
+    def method1(self):
+        """会按顺序打印结果"""
+        with ThreadPoolExecutor() as pool:
+            results = pool.map(craw, urls)
+            for result in results:
+                print(result)
+
+    def method2(self):
+        """哪个线程先结束就先打印哪个线程的结果"""
+        with ThreadPoolExecutor() as pool:
+            futures = [pool.submit(craw, url) for url in urls]
+            for future in futures:
+                print(future.result())
+            for future in as_completed(futures):
+                print(future.result())
 
 
 if __name__ == '__main__':
